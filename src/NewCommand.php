@@ -7,6 +7,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Process\Process;
 use ZipArchive;
@@ -47,19 +48,30 @@ class NewCommand extends Command
              ->cleanUp($zipFile)
              ->install($directory, $output);
 
+        // make github repository config optional
+        $question = new ConfirmationQuestion(
+            'Do you want to link an empty github repository to this project? (y/n): ',
+            false,
+            '/^(y|j)/i'
+        );
 
-        // Ask the user for the repository url
-        $question = new Question('<question>What is the repository url (git@github.com:repo.git) ?</question> ', $projectName);
-        $repositoryUrl = $helper->ask($input, $output, $question);
+        $response = $helper->ask($input, $output, $question);
 
-        $gitConfig = [
-            'url' => $repositoryUrl
-        ];
+        if ($response) {
 
-        // Proceed to github setup
-        $this->setupGitProject($directory, $output, $gitConfig);
+            // Ask the user for the repository url
+            $question = new Question('<question>What is the repository url (git@github.com:repo.git) ?</question> ', $projectName);
+            $repositoryUrl = $helper->ask($input, $output, $question);
 
-        $output->writeln('<info>Github setup completed.</info>');
+            $gitConfig = [
+                'url' => $repositoryUrl
+            ];
+
+            // Proceed to github setup
+            $this->setupGitProject($directory, $output, $gitConfig);
+
+            $output->writeln('<info>Github setup completed.</info>');
+        }
 
         $output->writeln('<info>Application ready!!</info>');
     }
@@ -139,8 +151,8 @@ class NewCommand extends Command
 
         $commands = [
             $composer.' install',
-            'npm install',
-            'bower install',
+            // 'npm install',
+            // 'bower install',
             'cp .env.example .env',
             'php artisan key:generate'
         ];
