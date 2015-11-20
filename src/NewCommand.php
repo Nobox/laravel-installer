@@ -156,8 +156,9 @@ class NewCommand extends Command
     private function setupGitProject($directory, $output, $config)
     {
         $commands = [
+            'cd ' . $directory,
             'git init',
-            'git add '. $directory,
+            'git add .',
             'git commit -m "Project Setup"',
             'git remote add origin ' . $config['url'],
             'git push -u origin master'
