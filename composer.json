@@ -1,6 +1,6 @@
 {
     "name": "nobox/nobox-laravel-installer",
-    "description": "Laravel Generator using a customized laravel installation.",
+    "description": "Laravel Project Generator using a customized laravel installation.",
     "keywords": ["laravel", "nobox"],
     "license": "MIT",
     "authors": [
