@@ -1,0 +1,23 @@
+{
+    "name": "nobox/laravel-installer",
+    "description": "Nobox Laravel Generator using a customized laravel installation.",
+    "keywords": ["laravel", "nobox"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Alberto Estrada",
+            "email": "albertoe@gmail.com"
+        }
+    ],
+    "require" : {
+        "symfony/console": "~2.0",
+        "guzzlehttp/guzzle": "^6.1",
+        "symfony/process": "~2.3"
+    },
+
+    "autoload": {
+        "psr-4": {
+            "Nobox\\": "src"
+        }
+    }
+}
