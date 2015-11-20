@@ -1,5 +1,5 @@
 {
-    "name": "nobox/laravel-installer",
+    "name": "nobox/nobox-laravel-installer",
     "description": "Nobox Laravel Generator using a customized laravel installation.",
     "keywords": ["laravel", "nobox"],
     "license": "MIT",
