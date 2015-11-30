@@ -151,11 +151,11 @@ class NewCommand extends Command
 
         $commands = [
             $composer.' install',
-            // 'npm install',
-            // 'bower install',
+            'npm install',
+            'bower install',
             'cp .env.example .env',
             'php artisan key:generate'
-        ];
+            ];
 
         $this->runProcess($commands, $directory, $output);
 
