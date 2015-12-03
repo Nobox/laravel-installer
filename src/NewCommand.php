@@ -154,7 +154,8 @@ class NewCommand extends Command
             'npm install',
             'bower install',
             'cp .env.example .env',
-            'php artisan key:generate'
+            'php artisan key:generate',
+            'gulp'
             ];
 
         $this->runProcess($commands, $directory, $output);
