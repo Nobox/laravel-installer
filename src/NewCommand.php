@@ -16,10 +16,12 @@ use Symfony\Component\Console\Helper\ProgressBar;
 class NewCommand extends Command
 {
     private $client;
+    protected $gitHubStatus;
 
     public function __construct(ClientInterface $client)
     {
         $this->client = $client;
+        $this->gitHubStatus = false;
 
         parent::__construct();
     }
@@ -54,13 +56,22 @@ class NewCommand extends Command
 
         if ($hasGithub) {
 
+
+            $this->checkGithubAccount('git config --global user.email', $directory, $output);
+
+
+            if (!$this->gitHubStatus) {
+                $emailQuestion = new Question('<question>What is your github email?</question> ', $projectName);
+                $githubEmail = $helper->ask($input, $output, $emailQuestion);
+                $gitConfig['email'] = $githubEmail;
+            }
+
+
             // Ask the user for the repository url
             $question = new Question('<question>What is the repository url (git@github.com:repo.git) ?</question> ', $projectName);
             $repositoryUrl = $helper->ask($input, $output, $question);
 
-            $gitConfig = [
-                'url' => $repositoryUrl
-            ];
+            $gitConfig['url'] = $repositoryUrl;
         }
 
 
@@ -171,13 +182,12 @@ class NewCommand extends Command
             'gulp'
         ];
 
-        $progress = new ProgressBar($output, 400);
+        $progress = new ProgressBar($output, 800);
         $progress->setFormat('[%bar%] %percent%%');
         $progress->start();
 
         $this->runProcess($commands, $directory, $output, $progress);
 
-        // $output->writeln('<info>Building complete...moving forward</info>');
         $progress->finish();
         $progress->clear();
 
@@ -191,16 +201,29 @@ class NewCommand extends Command
     private function setupGitProject($directory, $output, $config)
     {
         $output->writeln('<info>Linking github repository to project.</info>');
-        $commands = [
-            'cd ' . $directory,
-            'git init',
-            'git add .',
-            'git commit -m "Project Setup"',
-            'git remote add origin ' . $config['url'],
-            'git push -u origin master'
-        ];
 
-        $progress = new ProgressBar($output, 7);
+        if (!$this->gitHubStatus) {
+            $commands = [
+                'cd ' . $directory,
+                'git config --global user.email "' . $config['email'] . '"',
+                'git init',
+                'git add .',
+                'git commit -m "Project Setup"',
+                'git remote add origin ' . $config['url'],
+                'git push -u origin master'
+            ];
+        } else {
+            $commands = [
+                'cd ' . $directory,
+                'git init',
+                'git add .',
+                'git commit -m "Project Setup"',
+                'git remote add origin ' . $config['url'],
+                'git push -u origin master'
+            ];
+        }
+
+        $progress = new ProgressBar($output, 4);
         $progress->setFormat('[%bar%] %percent%%');
         $progress->start();
 
@@ -211,6 +234,18 @@ class NewCommand extends Command
         $output->writeln('');
 
         $output->writeln('<info>Git setup completed.</info>');
+    }
+
+
+    private function checkGithubAccount($command, $directory, OutputInterface $output)
+    {
+        $process = new Process($command, $directory);
+
+        $process->run(function ($type, $line) use ($output) {
+            if ($line !== '') {
+                $this->gitHubStatus = true;
+            }
+        });
     }
 
 
