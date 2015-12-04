@@ -11,6 +11,7 @@ use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Process\Process;
 use ZipArchive;
+use Symfony\Component\Console\Helper\ProgressBar;
 
 class NewCommand extends Command
 {
@@ -35,29 +36,23 @@ class NewCommand extends Command
         $projectName = $input->getArgument('name');
 
         $helper = $this->getHelper('question');
-        // assert that the forlder doesn't already exist
+
         $directory = getcwd() . '/' . $projectName;
 
-        $output->writeln('<comment>Crafting application...</comment>');
-
+        // assert that the forlder doesn't already exist
         $this->assertApplicationDoesNotExist($directory, $output);
 
-        $this->download($zipFile = $this->makeFileName())
-             ->extract($zipFile, $directory)
-             ->rename($directory)
-             ->cleanUp($zipFile)
-             ->install($directory, $output);
-
-        // make github repository config optional
+        // Ask the user for github repo (optional)
         $question = new ConfirmationQuestion(
             'Do you want to link an empty github repository to this project? (y/n): ',
             false,
             '/^(y|j)/i'
         );
 
-        $response = $helper->ask($input, $output, $question);
+        $hasGithub = $helper->ask($input, $output, $question);
 
-        if ($response) {
+
+        if ($hasGithub) {
 
             // Ask the user for the repository url
             $question = new Question('<question>What is the repository url (git@github.com:repo.git) ?</question> ', $projectName);
@@ -66,11 +61,25 @@ class NewCommand extends Command
             $gitConfig = [
                 'url' => $repositoryUrl
             ];
+        }
 
+
+        $output->writeln('<comment>Crafting application...</comment>');
+
+
+
+        $this->download($zipFile = $this->makeFileName(), $output)
+             ->extract($zipFile, $directory, $output)
+             ->rename($directory)
+             ->cleanUp($zipFile)
+             ->install($directory, $output);
+
+
+
+        if ($hasGithub) {
             // Proceed to github setup
             $this->setupGitProject($directory, $output, $gitConfig);
 
-            $output->writeln('<info>Github setup completed.</info>');
         }
 
         $output->writeln('<info>Application ready!!</info>');
@@ -104,8 +113,10 @@ class NewCommand extends Command
      * Download repository zip file
      * @param  [path] $zipFile Destination path
      */
-    private function download($zipFile)
+    private function download($zipFile, $output)
     {
+        $output->writeln('<comment>Downloading repository...</comment>');
+
         $response = $this->client->get('https://github.com/Nobox/laravel/archive/master.zip')->getBody();
 
         file_put_contents($zipFile, $response);
@@ -113,8 +124,10 @@ class NewCommand extends Command
         return $this;
     }
 
-    private function extract($zipFile, $directory)
+    private function extract($zipFile, $directory, $output)
     {
+        $output->writeln('<comment>Extracting repository...</comment>');
+
         $archive = new ZipArchive;
 
         $currentDir = getcwd();
@@ -145,7 +158,7 @@ class NewCommand extends Command
 
     private function install($directory, OutputInterface $output)
     {
-        $output->writeln('<info>Application generated...lets install composer, npm and bower.</info>');
+        $output->writeln('<info>Installing dependencies from composer, npm and bower.</info>');
 
         $composer = $this->findComposer();
 
@@ -156,11 +169,20 @@ class NewCommand extends Command
             'cp .env.example .env',
             'php artisan key:generate',
             'gulp'
-            ];
+        ];
 
-        $this->runProcess($commands, $directory, $output);
+        $progress = new ProgressBar($output, 400);
+        $progress->setFormat('[%bar%] %percent%%');
+        $progress->start();
 
-        $output->writeln('<info>Building complete...moving forward</info>');
+        $this->runProcess($commands, $directory, $output, $progress);
+
+        // $output->writeln('<info>Building complete...moving forward</info>');
+        $progress->finish();
+        $progress->clear();
+
+        $output->writeln('');
+        $output->writeln('<info>Dependencies installation completed.</info>');
 
         return $this;
     }
@@ -168,6 +190,7 @@ class NewCommand extends Command
 
     private function setupGitProject($directory, $output, $config)
     {
+        $output->writeln('<info>Linking github repository to project.</info>');
         $commands = [
             'cd ' . $directory,
             'git init',
@@ -177,7 +200,17 @@ class NewCommand extends Command
             'git push -u origin master'
         ];
 
-        $this->runProcess($commands, $directory, $output);
+        $progress = new ProgressBar($output, 7);
+        $progress->setFormat('[%bar%] %percent%%');
+        $progress->start();
+
+        $this->runProcess($commands, $directory, $output, $progress);
+
+        $progress->finish();
+        $progress->clear();
+        $output->writeln('');
+
+        $output->writeln('<info>Git setup completed.</info>');
     }
 
 
@@ -188,12 +221,17 @@ class NewCommand extends Command
      * @param  OutputInterface $output    [description]
      * @return [void]                     [description]
      */
-    private function runProcess($commands, $directory, OutputInterface $output)
+    private function runProcess($commands, $directory, OutputInterface $output, $progress)
     {
         $process = new Process(implode(' && ', $commands), $directory, null, null, null);
 
-        $process->run(function ($type, $line) use ($output) {
-            $output->write($line);
+        $process->run(function ($type, $line) use ($output, $progress) {
+            if ($output->isVerbose()) {
+                $progress->setFormat('%message% [%bar%] %percent%%');
+                $progress->setMessage($line);
+            }
+
+            $progress->advance();
         });
     }
 
