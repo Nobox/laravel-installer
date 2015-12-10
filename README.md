@@ -28,7 +28,7 @@ Now you can install a new project with the nobox fork of laravel just using the 
 nobox new project-name
 ```
 
-If you want to see all the commands instalation logs use the flag -v
+If you want to see all the command instalation logs use the flag ``-v``
 
 
 #### What includes the installation?
