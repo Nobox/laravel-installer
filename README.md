@@ -26,9 +26,10 @@ Now you can install a new project with the nobox fork of laravel just using the 
 
 
 #### Commands Available
-```new```
-```clone```
-
+```
+nobox new
+nobox clone
+```
 
 ##### To setup a new app using our fork
 
@@ -39,7 +40,7 @@ nobox new project-name
 If you want to see all the command instalation logs use the flag ``-v``
 
 
-*What includes the installation?*
+**What includes the installation?**
 
 1. ``composer install`` ( will install all composer dependencies )
 2. ``npm install`` ( will install all the npm dependencies )
@@ -49,7 +50,8 @@ If you want to see all the command instalation logs use the flag ``-v``
 5. (optional) Links empty github repository to your project directory
 
 
-##### To setup an existing app using our fork
+##### To setup an existing app that uses our fork
 ```
 nobox clone [project.repository.address.git] [project-name]
 ```
+
