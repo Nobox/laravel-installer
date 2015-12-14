@@ -16,7 +16,7 @@
 Download the nobox installer using Composer:
 
 ```
-composer global require "nobox/nobox-laravel-installer=~2.0"
+composer global require "nobox/nobox-laravel-installer=~2.2"
 ```
 
 Once installed make sure place the ``~/.composer/vendor/bin directory`` in your **PATH** so the ``nobox`` executable could be located by your system.
