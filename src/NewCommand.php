@@ -12,10 +12,7 @@ use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Process\Process;
 use ZipArchive;
 use Symfony\Component\Console\Helper\ProgressBar;
-use Nobox\Traits\Files;
-use Nobox\Traits\Environment;
-use Nobox\Traits\Github;
-use Nobox\Traits\ProcessHelper;
+
 
 class NewCommand extends Command
 {
@@ -25,7 +22,7 @@ class NewCommand extends Command
     protected $linkedGithubAccount;
     protected $githubConfig;
 
-    use Files, Environment, Github, ProcessHelper;
+    use Traits\Files, Traits\Environment, Traits\Github, Traits\ProcessHelper;
 
     public function __construct(ClientInterface $client)
     {
