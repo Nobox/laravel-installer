@@ -16,13 +16,21 @@
 Download the nobox installer using Composer:
 
 ```
-composer global require "nobox/nobox-laravel-installer=~1.5"
+composer global require "nobox/nobox-laravel-installer=~2.0"
 ```
 
 Once installed make sure place the ``~/.composer/vendor/bin directory`` in your **PATH** so the ``nobox`` executable could be located by your system.
 
 
 Now you can install a new project with the nobox fork of laravel just using the **nobox new** command in the directory you specify.
+
+
+#### Commands Available
+```new```
+```clone```
+
+
+##### To setup a new app using our fork
 
 ```
 nobox new project-name
@@ -31,7 +39,7 @@ nobox new project-name
 If you want to see all the command instalation logs use the flag ``-v``
 
 
-#### What includes the installation?
+*What includes the installation?*
 
 1. ``composer install`` ( will install all composer dependencies )
 2. ``npm install`` ( will install all the npm dependencies )
@@ -40,3 +48,8 @@ If you want to see all the command instalation logs use the flag ``-v``
 5. ``gulp`` (compiles the assets so the site is ready)
 5. (optional) Links empty github repository to your project directory
 
+
+##### To setup an existing app using our fork
+```
+nobox clone [project.repository.address.git] [project-name]
+```

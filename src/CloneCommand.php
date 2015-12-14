@@ -10,20 +10,19 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Process\Process;
-use ZipArchive;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Nobox\Traits\Files;
 use Nobox\Traits\Environment;
 use Nobox\Traits\Github;
 use Nobox\Traits\ProcessHelper;
 
-class NewCommand extends Command
+class CloneCommand extends Command
 {
     private $client;
-    protected $gitHubStatus;
     protected $projectName;
     protected $linkedGithubAccount;
     protected $githubConfig;
+    protected $githubRepository;
 
     use Files, Environment, Github, ProcessHelper;
 
@@ -31,74 +30,63 @@ class NewCommand extends Command
     {
         $this->client = $client;
         $this->gitHubStatus = false;
-
         parent::__construct();
+
     }
 
     public function configure()
     {
-        $this->setName('new')
-             ->setDescription('Create and Setup new Laravel app using Nobox fork.')
+        $this->setName('clone')
+             ->setDescription('Clone and Setup Existing Laravel Project that used the Nobox fork into a directory')
+             ->addArgument('repository', InputArgument::REQUIRED)
              ->addArgument('name', InputArgument::REQUIRED);
     }
 
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->projectName = $input->getArgument('name');
+        $helper = $this->getHelper('question');
 
+        $this->projectName = $input->getArgument('name');
+        $this->githubRepository = $input->getArgument('repository');
         $directory = getcwd() . '/' . $this->projectName;
 
-        // assert that the forlder doesn't already exist
-        $this->assertApplicationDoesNotExist($directory, $output);
+        // check if the user has github account linked to file system
+        $this->checkGithubAccount('git config --global user.email', $directory, $output);
 
-        $this->githubConfig = $this->askForGithub($input, $output, $directory);
+        if (!$this->gitHubStatus) {
+            $emailQuestion = new Question('<question>What is your github email?</question> ');
+            $githubEmail = $helper->ask($input, $output, $emailQuestion);
 
+            $this->githubConfig['email'] = $githubEmail;
 
-        $output->writeln('<comment>Crafting application...</comment>');
-
-
-
-        $this->download($zipFile = $this->makeFileName(), $output)
-             ->extract($zipFile, $directory, $output)
-             ->rename($directory)
-             ->cleanUp($zipFile)
-             ->install($directory, $output);
-
-
-
-        if (is_array($this->githubConfig)) {
-            // Proceed to github setup
-            $this->setupGitProject($directory, $output, $this->githubConfig);
-
+            $command['github-set-email'] = [
+                'title' => 'Setting github email',
+                'line' => [
+                    'git config --global user.email "' . $this->githubConfig['email'] . '"'
+                ]
+            ];
         }
+
+
+        // clone repository
+
+        $command['github-clone'] = [
+            'title' => 'Clonning Github Repository into assigned directory',
+            'line' => [
+                'git clone ' . $this->githubRepository . ' ' . $this->projectName
+            ]
+        ];
+
+
+        $this->processIterator($command, $directory, $output);
+
+        // setup project
+
+        $this->install($directory, $output);
 
         $output->writeln('<info>Application ready!!</info>');
     }
 
-    /**
-     * Generate temporary zip file
-     * @return [file path] the path of the temporary zip file
-     */
-    private function makeFileName()
-    {
-        return getcwd() . '/nobox-laravel_' . md5(time().uniqid()) . '.zip';
-    }
-
-    /**
-     * Download repository zip file
-     * @param  [path] $zipFile Destination path
-     */
-    private function download($zipFile, $output)
-    {
-        $output->write('<comment>Downloading repository...</comment> ');
-
-        $response = $this->client->get('https://github.com/Nobox/laravel/archive/master.zip')->getBody();
-
-        file_put_contents($zipFile, $response);
-        $output->write('<info>√ done</info>', 1);
-
-        return $this;
-    }
 
     private function install($directory, OutputInterface $output)
     {
@@ -149,8 +137,4 @@ class NewCommand extends Command
 
         return $this;
     }
-
-
-
-
 }
